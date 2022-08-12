@@ -19,23 +19,64 @@ class CloseLoopDrawerOpeningEnv(CloseLoopEnv):
     self.drawer = Drawer()
     self.drawer_rot = 0
 
+    self.id = 0
+    self.pos_base = np.array([self.workspace[0].mean(), self.workspace[1].mean()])
+    self.rot_base = 0
+
   def initialize(self):
     super().initialize()
     self.drawer.initialize((self.workspace[0].mean(), self.workspace[1].mean(), 0), pb.getQuaternionFromEuler((0, 0, 0)), 0.3)
 
+  # def reset(self):
+  #   self.resetPybulletWorkspace()
+  #   self.robot.moveTo([self.workspace[0].mean(), self.workspace[1].mean(), 0.2], transformations.quaternion_from_euler(0, 0, 0))
+  #   # pos = self._getValidPositions(0.1, 0, [], 1)[0]
+  #   # pos.append(0)
+  #   pos = np.array([self.workspace[0].mean(), self.workspace[1].mean(), 0])
+  #   self.drawer_rot = np.random.random()*2*np.pi if self.random_orientation else np.random.choice([np.pi/2, 3*np.pi/2])
+  #   m = np.array(transformations.euler_matrix(0, 0, self.drawer_rot))[:3, :3]
+  #   dx = np.random.random() * (0.2 - 0.15) + 0.15
+  #   dy = np.random.random() * (0.1 - -0.1) + -0.1
+  #   pos = pos + m[:, 0] * dx
+  #   pos = pos + m[:, 1] * dy
+  #   self.drawer.reset(pos, transformations.quaternion_from_euler(0, 0, self.drawer_rot))
+  #
+  #   return self._getObservation()
+
   def reset(self):
+    N = 4
+    if self.id % (2*N) == 0:
+      pos = np.array([self.workspace[0].mean(), self.workspace[1].mean(), 0])
+      self.drawer_rot = np.random.random()*2*np.pi if self.random_orientation else np.random.choice([np.pi/2, 3*np.pi/2])
+      m = np.array(transformations.euler_matrix(0, 0, self.drawer_rot))[:3, :3]
+      dx = np.random.random() * (0.2 - 0.15) + 0.15
+      dy = np.random.random() * (0.1 - -0.1) + -0.1
+      pos = pos + m[:, 0] * dx
+      pos = pos + m[:, 1] * dy
+
+      self.pos_base = pos[:2]
+      self.rot_base = self.drawer_rot
+
+    block_pose_relative = self.pos_base - np.array([self.workspace[0].mean(), self.workspace[1].mean()])
+    theta = self.id * np.pi * 2/N
+    R = np.array([[np.cos(theta), -np.sin(theta)],
+                  [np.sin(theta), np.cos(theta)]])
+    theta = theta + self.rot_base
+    if self.id % (2*N) >= N:
+      R = R @ np.array([[1, 0], [0, -1]])
+      if (self.id % (2*N)) % 2 == 0:
+        theta = -theta
+      else:
+        theta = np.pi - theta
+    block_pose_relative = R @ block_pose_relative
+    block_pose = list(block_pose_relative + np.array([self.workspace[0].mean(), self.workspace[1].mean()]))
+    block_pose.append(0)
+    block_rot = transformations.quaternion_from_euler(0, 0, theta)
+
     self.resetPybulletWorkspace()
     self.robot.moveTo([self.workspace[0].mean(), self.workspace[1].mean(), 0.2], transformations.quaternion_from_euler(0, 0, 0))
-    # pos = self._getValidPositions(0.1, 0, [], 1)[0]
-    # pos.append(0)
-    pos = np.array([self.workspace[0].mean(), self.workspace[1].mean(), 0])
-    self.drawer_rot = np.random.random()*2*np.pi if self.random_orientation else np.random.choice([np.pi/2, 3*np.pi/2])
-    m = np.array(transformations.euler_matrix(0, 0, self.drawer_rot))[:3, :3]
-    dx = np.random.random() * (0.2 - 0.15) + 0.15
-    dy = np.random.random() * (0.1 - -0.1) + -0.1
-    pos = pos + m[:, 0] * dx
-    pos = pos + m[:, 1] * dy
-    self.drawer.reset(pos, transformations.quaternion_from_euler(0, 0, self.drawer_rot))
+    self.drawer.reset(block_pose, block_rot)
+    self.id += 1
 
     return self._getObservation()
 
