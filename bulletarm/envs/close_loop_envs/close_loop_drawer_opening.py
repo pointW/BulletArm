@@ -43,6 +43,7 @@ class CloseLoopDrawerOpeningEnv(CloseLoopEnv):
   #
   #   return self._getObservation()
 
+  # D4 fixed gripper
   def reset(self):
     N = 4
     if self.id % (2*N) == 0:
@@ -79,6 +80,51 @@ class CloseLoopDrawerOpeningEnv(CloseLoopEnv):
     self.id += 1
 
     return self._getObservation()
+
+  # D4 random gripper
+  # def reset(self):
+  #   N = 4
+  #   if self.id % (2*N) == 0:
+  #     pos = np.array([self.workspace[0].mean(), self.workspace[1].mean(), 0])
+  #     self.drawer_rot = np.random.random()*2*np.pi if self.random_orientation else np.random.choice([np.pi/2, 3*np.pi/2])
+  #     m = np.array(transformations.euler_matrix(0, 0, self.drawer_rot))[:3, :3]
+  #     dx = np.random.random() * (0.2 - 0.15) + 0.15
+  #     dy = np.random.random() * (0.1 - -0.1) + -0.1
+  #     pos = pos + m[:, 0] * dx
+  #     pos = pos + m[:, 1] * dy
+  #
+  #     self.pos_base = pos[:2]
+  #     self.rot_base = self.drawer_rot
+  #
+  #     self.gripper_pose = np.array([(np.random.random()-0.5) * 0.1 + self.workspace[0].mean(),
+  #                                   (np.random.random()-0.5) * 0.1 + self.workspace[1].mean(),
+  #                                   np.random.random() * 0.1 + 0.1])
+  #
+  #   block_pose_relative = self.pos_base - np.array([self.workspace[0].mean(), self.workspace[1].mean()])
+  #   gripper_pose_relative = self.gripper_pose[:2] - np.array([self.workspace[0].mean(), self.workspace[1].mean()])
+  #   theta = self.id * np.pi * 2/N
+  #   R = np.array([[np.cos(theta), -np.sin(theta)],
+  #                 [np.sin(theta), np.cos(theta)]])
+  #   theta = theta + self.rot_base
+  #   if self.id % (2*N) >= N:
+  #     R = R @ np.array([[1, 0], [0, -1]])
+  #     if (self.id % (2*N)) % 2 == 0:
+  #       theta = -theta
+  #     else:
+  #       theta = np.pi - theta
+  #   block_pose_relative = R @ block_pose_relative
+  #   gripper_pose_relative = R @ gripper_pose_relative
+  #   block_pose = list(block_pose_relative + np.array([self.workspace[0].mean(), self.workspace[1].mean()]))
+  #   block_pose.append(0)
+  #   gripper_pose = list(gripper_pose_relative + np.array([self.workspace[0].mean(), self.workspace[1].mean()])) + [self.gripper_pose[2]]
+  #   block_rot = transformations.quaternion_from_euler(0, 0, theta)
+  #
+  #   self.resetPybulletWorkspace()
+  #   self.robot.moveTo(gripper_pose, transformations.quaternion_from_euler(0, 0, theta), dynamic=False)
+  #   self.drawer.reset(block_pose, block_rot)
+  #   self.id += 1
+  #
+  #   return self._getObservation()
 
   def _checkTermination(self):
     return self.drawer.isDrawerOpen()
