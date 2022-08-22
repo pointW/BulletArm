@@ -20,7 +20,13 @@ class Drawer:
   def initialize(self, pos=(0,0,0), rot=(0,0,0,1), scale=0.5):
     drawer_urdf_filepath = os.path.join(constants.URDF_PATH, 'drawer{}.urdf'.format(self.model_id))
     self.id = pb.loadURDF(drawer_urdf_filepath, pos, rot, globalScaling=scale)
+    shade = 1
+    for i in range(8, 13):
+      pb.changeVisualShape(self.id, i, rgbaColor=(np.float32([shade * 156, shade * 117, shade * 95, 255]) / 255))
     self.handle = DrawerHandle(self.id)
+    shade = 0.5
+    for i in range(-1, 2):
+      pb.changeVisualShape(self.handle.id, i, rgbaColor=(np.float32([shade * 156, shade * 117, shade * 95, 255]) / 255))
 
   def remove(self):
     if self.id:

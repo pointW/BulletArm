@@ -14,6 +14,11 @@ class Sensor(object):
     self.fov = np.degrees(2 * np.arctan((target_size / 2) / self.far))
     self.proj_matrix = pb.computeProjectionMatrixFOV(self.fov, 1, self.near, self.far)
 
+    self.light_direction = (-1, 1, 2)
+    self.shadow = 0
+    self.light_specular_coeff = 0.1
+    self.light_color = (1, 1, 1)
+
   def setCamMatrix(self, cam_pos, cam_up_vector, target_pos):
     self.view_matrix = pb.computeViewMatrix(
       cameraEyePosition=[cam_pos[0], cam_pos[1], cam_pos[2]],
@@ -36,7 +41,8 @@ class Sensor(object):
     image_arr = pb.getCameraImage(width=size, height=size,
                                   viewMatrix=self.view_matrix,
                                   projectionMatrix=self.proj_matrix,
-                                  renderer=pb.ER_TINY_RENDERER)
+                                  renderer=pb.ER_TINY_RENDERER, shadow=self.shadow, lightDirection=self.light_direction,
+                                  lightSpecularCoeff=self.light_specular_coeff, lightColor=self.light_color)
     rgb_img = np.moveaxis(image_arr[2][:, :, :3], 2, 0) / 255
     return rgb_img
 

@@ -21,6 +21,7 @@ from bulletarm.pybullet.robots.ur5_simple import UR5_Simple
 from bulletarm.pybullet.robots.ur5_robotiq import UR5_Robotiq
 from bulletarm.pybullet.robots.kuka import Kuka
 from bulletarm.pybullet.robots.panda import Panda
+from bulletarm.pybullet.robots.empty import Empty
 from bulletarm.pybullet.utils.sensor import Sensor
 from bulletarm.pybullet.objects.pybullet_object import PybulletObject
 import bulletarm.pybullet.utils.object_generation as pb_obj_generation
@@ -109,6 +110,8 @@ class BaseEnv:
       self.robot = Kuka()
     elif config['robot'] == 'panda':
       self.robot = Panda()
+    elif config['robot'] == 'empty':
+      self.robot = Empty()
     else:
       raise NotImplementedError
 

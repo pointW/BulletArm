@@ -1,6 +1,8 @@
 import pybullet as pb
 import numpy as np
+import os
 from bulletarm.envs.base_env import BaseEnv
+from bulletarm.pybullet.utils import constants
 from bulletarm.pybullet.utils import transformations
 from bulletarm.pybullet.utils.renderer import Renderer
 from bulletarm.pybullet.utils.ortho_sensor import OrthographicSensor
@@ -28,21 +30,15 @@ class CloseLoopEnv(BaseEnv):
     if 'obs_type' not in config:
       config['obs_type'] = 'pixel'
     if 'view_scale' not in config:
-      config['view_scale'] = 1.5
+      config['view_scale'] = 2
     if 'close_loop_tray' not in config:
       config['close_loop_tray'] = False
+    if 'corrupt' not in config:
+      config['corrupt'] = []
     super().__init__(config)
     self.view_type = config['view_type']
     self.obs_type = config['obs_type']
-    assert self.view_type in ['render_center', 'render_center_height', 'render_fix', 'camera_center_xyzr', 'camera_center_xyr',
-                              'camera_center_xyz', 'camera_center_xy', 'camera_fix', 'camera_center_xyr_height',
-                              'camera_center_xyz_height', 'camera_center_xy_height', 'camera_fix_height',
-                              'camera_center_z', 'camera_center_z_height', 'pers_center_xyz', 'camera_side',
-                              'camera_side_rgbd', 'camera_side_height', 'camera_side_offset', 'camera_side_offset_rgbd',
-                              'camera_side_offset_height', 'camera_side_1', 'camera_side_1_rgbd', 'camera_side_1_height',
-                              'camera_side_rgbd_15', 'camera_side_rgbd_30', 'camera_side_rgbd_60', 'camera_side_rgbd_undis',
-                              'camera_side_rgbd_60_undis', 'camera_side_rgbd_reflect', 'camera_center_xyz_reflect',
-                              'camera_side_rgbd_random_reflect', 'camera_fix_rgbd']
+    self.corrupt = config['corrupt']
     self.view_scale = config['view_scale']
     self.robot_type = config['robot']
     if config['robot'] == 'kuka':
@@ -69,17 +65,64 @@ class CloseLoopEnv(BaseEnv):
     self.simulate_rot = None
 
   def initialize(self):
-    super().initialize()
+    '''
+    Initialize the pybullet world.
+    '''
+    pb.resetSimulation()
+    pb.setPhysicsEngineParameter(numSubSteps=0,
+                                 numSolverIterations=self.num_solver_iterations,
+                                 solverResidualThreshold=self.solver_residual_threshold,
+                                 constraintSolverType=pb.CONSTRAINT_SOLVER_LCP_SI)
+    pb.setTimeStep(self._timestep)
+    pb.setGravity(0, 0, -10)
+
+    if 'grid' in self.corrupt:
+      self.table_id = pb.loadURDF('plane.urdf', [0, 0, 0], globalScaling=0.2)
+    else:
+      self.table_id = pb.loadURDF(os.path.join(constants.URDF_PATH, 'white_plane.urdf'), [0,0,0])
+
+    if self.black_workspace:
+      ws_visual = pb.createVisualShape(pb.GEOM_BOX, halfExtents=[self.workspace_size/2, self.workspace_size/2, 0.001], rgbaColor=[0.2, 0.2, 0.2, 1])
+      ws_id = pb.createMultiBody(baseMass=0,
+                                 baseVisualShapeIndex=ws_visual,
+                                 basePosition=[self.workspace[0].mean(), self.workspace[1].mean(), 0],
+                                 baseOrientation=[0, 0, 0, 1])
+
+    # Load the UR5 and set it to the home positions
+    self.robot.initialize()
+
+    # Reset episode vars
+    self.objects = list()
+    self.object_types = {}
+
+    self.heightmap = None
+    self.current_episode_steps = 1
+    self.last_action = None
+
+    # Step simulation
+    pb.stepSimulation()
+
     if self.has_tray:
       self.tray.initialize(pos=[self.workspace[0].mean(), self.workspace[1].mean(), 0],
                            size=[self.bin_size, self.bin_size, 0.1])
 
   def initSensor(self):
-    cam_pos = [self.workspace[0].mean(), self.workspace[1].mean(), 0.29]
-    target_pos = [self.workspace[0].mean(), self.workspace[1].mean(), 0]
-    cam_up_vector = [-1, 0, 0]
-    self.sensor = OrthographicSensor(cam_pos, cam_up_vector, target_pos, self.obs_size_m, 0.1, 1)
-    self.sensor.setCamMatrix(cam_pos, cam_up_vector, target_pos)
+    if 'side' in self.corrupt:
+      cam_pos = [self.workspace[0].mean() + 0.6, self.workspace[1].mean(), 0.6]
+      target_pos = [self.workspace[0].mean(), self.workspace[1].mean(), 0]
+      cam_up_vector = [-1, 0, 0]
+      self.sensor = Sensor(cam_pos, cam_up_vector, target_pos, 0.7, 0.1, 3)
+      self.sensor.fov = 40
+      self.sensor.proj_matrix = pb.computeProjectionMatrixFOV(self.sensor.fov, 1, self.sensor.near, self.sensor.far)
+    else:
+      cam_pos = [self.workspace[0].mean(), self.workspace[1].mean(), 1]
+      target_pos = [self.workspace[0].mean(), self.workspace[1].mean(), 0]
+      cam_up_vector = [-1, 0, 0]
+      # self.sensor = OrthographicSensor(cam_pos, cam_up_vector, target_pos, self.obs_size_m, 0.1, 1)
+      # self.sensor.setCamMatrix(cam_pos, cam_up_vector, target_pos)
+      self.sensor = Sensor(cam_pos, cam_up_vector, target_pos, self.obs_size_m, 0.1, 3)
+      self.sensor.fov = np.degrees(2 * np.arctan((self.obs_size_m / 2) / cam_pos[2]))
+      self.sensor.proj_matrix = pb.computeProjectionMatrixFOV(self.sensor.fov, 1, self.sensor.near, self.sensor.far)
     self.renderer = Renderer(self.workspace)
     self.pers_sensor = Sensor(cam_pos, cam_up_vector, target_pos, self.obs_size_m, cam_pos[2] - 1, cam_pos[2])
 
@@ -214,26 +257,49 @@ class CloseLoopEnv(BaseEnv):
       [np.array([gripper_state]), scaled_gripper_pos, np.array([scaled_gripper_rz]), scaled_obj_poses])
     return obs
 
+  # def _getObservation(self, action=None):
+  #   ''''''
+  #   if self.obs_type == 'pixel':
+  #     self.heightmap = self._getHeightmap()
+  #     heightmap = self.heightmap
+  #     # draw gripper if view is centered at the gripper
+  #     if self.view_type in ['camera_center_xyz', 'camera_center_xyz_height', 'render_center', 'render_center_height']:
+  #       gripper_img = self.getGripperImg()
+  #       if self.view_type.find('height') > -1:
+  #         gripper_pos = self.robot._getEndEffectorPosition()
+  #         heightmap[gripper_img == 1] = gripper_pos[2]
+  #       else:
+  #         heightmap[gripper_img == 1] = 0
+  #     # add channel dimension if view is depth only
+  #     if self.view_type.find('rgb') == -1:
+  #       heightmap = heightmap.reshape([1, self.heightmap_size, self.heightmap_size])
+  #     return self._isHolding(), None, heightmap
+  #   else:
+  #     obs = self._getVecObservation()
+  #     return self._isHolding(), None, obs
+
   def _getObservation(self, action=None):
     ''''''
-    if self.obs_type == 'pixel':
-      self.heightmap = self._getHeightmap()
-      heightmap = self.heightmap
-      # draw gripper if view is centered at the gripper
-      if self.view_type in ['camera_center_xyz', 'camera_center_xyz_height', 'render_center', 'render_center_height']:
-        gripper_img = self.getGripperImg()
-        if self.view_type.find('height') > -1:
-          gripper_pos = self.robot._getEndEffectorPosition()
-          heightmap[gripper_img == 1] = gripper_pos[2]
-        else:
-          heightmap[gripper_img == 1] = 0
-      # add channel dimension if view is depth only
-      if self.view_type.find('rgb') == -1:
-        heightmap = heightmap.reshape([1, self.heightmap_size, self.heightmap_size])
-      return self._isHolding(), None, heightmap
-    else:
-      obs = self._getVecObservation()
-      return self._isHolding(), None, obs
+    if 'shadow' in self.corrupt:
+      self.sensor.shadow = 1
+    if 'random_light_color' in self.corrupt:
+      self.sensor.light_color = np.random.random(3) * 0.8 + 0.2
+    # rgb_img = self.sensor.getRGBImg(self.heightmap_size)
+    # depth_img = self.sensor.getDepthImg(self.heightmap_size).reshape(1, self.heightmap_size, self.heightmap_size)
+    # rgbd = np.concatenate([rgb_img, depth_img])
+    rgb_img = self.sensor.getRGBImg(512)
+    depth_img = self.sensor.getDepthImg(512).reshape(1, 512, 512)
+    rgbd = np.concatenate([rgb_img, depth_img])
+    rgbd = cv2.resize(np.moveaxis(rgbd, 0, 2), (128, 128), interpolation=cv2.INTER_AREA)
+    rgbd = np.moveaxis(rgbd, 2, 0)
+    if 'reflect' in self.corrupt:
+      rgbd = rgbd[:, :, ::-1]
+    if 'random_reflect' in self.corrupt:
+      if np.random.random() > 0.5:
+        rgbd = rgbd[:, :, ::-1]
+      if np.random.random() > 0.5:
+        rgbd = rgbd[:, ::-1, :]
+    return self._isHolding(), None, rgbd
 
   def simulate(self, action):
     p, dx, dy, dz, r = self._decodeAction(action)
