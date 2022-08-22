@@ -81,6 +81,14 @@ class CloseLoopEnv(BaseEnv):
     else:
       self.table_id = pb.loadURDF(os.path.join(constants.URDF_PATH, 'white_plane.urdf'), [0,0,0])
 
+    if 'occlusion' in self.corrupt:
+      blocker = pb.createVisualShape(pb.GEOM_BOX, halfExtents=[0.05/2, 0.1/2, 0.001], rgbaColor=[0.2, 0.2, 0.2, 1])
+      blocker_id = pb.createMultiBody(baseMass=0,
+                                      baseVisualShapeIndex=blocker,
+                                      basePosition=[self.workspace[0][1] - 0.1, self.workspace[1][0] + 0.1, 0.15],
+                                      baseOrientation=[0, 0, 0, 1])
+      # pb.changeVisualShape(blocker_id, -1, rgbaColor=[0, 0, 0, 0])
+
     if self.black_workspace:
       ws_visual = pb.createVisualShape(pb.GEOM_BOX, halfExtents=[self.workspace_size/2, self.workspace_size/2, 0.001], rgbaColor=[0.2, 0.2, 0.2, 1])
       ws_id = pb.createMultiBody(baseMass=0,
