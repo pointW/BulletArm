@@ -67,12 +67,17 @@ class CloseLoopBlockPickingEnv(CloseLoopEnv):
     theta = self.id * np.pi * 2/N
     R = np.array([[np.cos(theta), -np.sin(theta)],
                   [np.sin(theta), np.cos(theta)]])
+    theta = theta + self.rot_base
     if self.id % (2*N) >= N:
       R = R @ np.array([[1, 0], [0, -1]])
+      if (self.id % (2*N)) % 2 == 0:
+        theta = -theta
+      else:
+        theta = np.pi - theta
     block_pose_relative = R @ block_pose_relative
     block_pose = list(block_pose_relative + np.array([self.workspace[0].mean(), self.workspace[1].mean()]))
     block_pose.append(0.03)
-    block_rot = transformations.quaternion_from_euler(0, 0, theta + self.rot_base)
+    block_rot = transformations.quaternion_from_euler(0, 0, theta)
 
     self.resetPybulletWorkspace()
     # gripper_pose = block_pose + np.array([0, 0, 0.05])
