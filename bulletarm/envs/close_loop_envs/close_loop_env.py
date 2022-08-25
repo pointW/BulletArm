@@ -298,7 +298,7 @@ class CloseLoopEnv(BaseEnv):
     rgb_img = self.sensor.getRGBImg(512)
     depth_img = self.sensor.getDepthImg(512).reshape(1, 512, 512)
     rgbd = np.concatenate([rgb_img, depth_img])
-    rgbd = cv2.resize(np.moveaxis(rgbd, 0, 2), (128, 128), interpolation=cv2.INTER_AREA)
+    rgbd = cv2.resize(np.moveaxis(rgbd, 0, 2), (self.heightmap_size, self.heightmap_size), interpolation=cv2.INTER_AREA)
     rgbd = np.moveaxis(rgbd, 2, 0)
     if 'reflect' in self.corrupt:
       rgbd = rgbd[:, :, ::-1]
