@@ -39,6 +39,9 @@ class CloseLoopEnv(BaseEnv):
     self.view_type = config['view_type']
     self.obs_type = config['obs_type']
     self.corrupt = config['corrupt']
+    for corrupt in self.corrupt:
+      assert corrupt in ['', 'grid', 'side', 'occlusion', 'shadow', 'random_light_color', 'reflect', 'random_reflect',
+                         'squeeze']
     self.view_scale = config['view_scale']
     self.robot_type = config['robot']
     if config['robot'] == 'kuka':
@@ -115,13 +118,17 @@ class CloseLoopEnv(BaseEnv):
                            size=[self.bin_size, self.bin_size, 0.1])
 
   def initSensor(self):
+    if 'squeeze' in self.corrupt:
+      aspect = 2
+    else:
+      aspect = 1
     if 'side' in self.corrupt:
       cam_pos = [self.workspace[0].mean() + 0.6, self.workspace[1].mean(), 0.6]
       target_pos = [self.workspace[0].mean(), self.workspace[1].mean(), 0]
       cam_up_vector = [-1, 0, 0]
       self.sensor = Sensor(cam_pos, cam_up_vector, target_pos, 0.7, 0.1, 3)
       self.sensor.fov = 40
-      self.sensor.proj_matrix = pb.computeProjectionMatrixFOV(self.sensor.fov, 1, self.sensor.near, self.sensor.far)
+      self.sensor.proj_matrix = pb.computeProjectionMatrixFOV(self.sensor.fov, aspect, self.sensor.near, self.sensor.far)
     else:
       cam_pos = [self.workspace[0].mean(), self.workspace[1].mean(), 1]
       target_pos = [self.workspace[0].mean(), self.workspace[1].mean(), 0]
@@ -130,7 +137,7 @@ class CloseLoopEnv(BaseEnv):
       # self.sensor.setCamMatrix(cam_pos, cam_up_vector, target_pos)
       self.sensor = Sensor(cam_pos, cam_up_vector, target_pos, self.obs_size_m, 0.1, 3)
       self.sensor.fov = np.degrees(2 * np.arctan((self.obs_size_m / 2) / cam_pos[2]))
-      self.sensor.proj_matrix = pb.computeProjectionMatrixFOV(self.sensor.fov, 1, self.sensor.near, self.sensor.far)
+      self.sensor.proj_matrix = pb.computeProjectionMatrixFOV(self.sensor.fov, aspect, self.sensor.near, self.sensor.far)
     self.renderer = Renderer(self.workspace)
     self.pers_sensor = Sensor(cam_pos, cam_up_vector, target_pos, self.obs_size_m, cam_pos[2] - 1, cam_pos[2])
 
