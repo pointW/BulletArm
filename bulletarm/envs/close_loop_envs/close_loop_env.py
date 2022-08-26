@@ -41,7 +41,7 @@ class CloseLoopEnv(BaseEnv):
     self.corrupt = config['corrupt']
     for corrupt in self.corrupt:
       assert corrupt in ['', 'grid', 'side', 'occlusion', 'shadow', 'random_light_color', 'reflect', 'random_reflect',
-                         'squeeze']
+                         'squeeze', 'two_light_color', 'two_specular']
     self.view_scale = config['view_scale']
     self.robot_type = config['robot']
     if config['robot'] == 'kuka':
@@ -302,7 +302,20 @@ class CloseLoopEnv(BaseEnv):
     # rgb_img = self.sensor.getRGBImg(self.heightmap_size)
     # depth_img = self.sensor.getDepthImg(self.heightmap_size).reshape(1, self.heightmap_size, self.heightmap_size)
     # rgbd = np.concatenate([rgb_img, depth_img])
-    rgb_img = self.sensor.getRGBImg(512)
+    if 'two_light_color' in self.corrupt:
+      self.sensor.light_color = [1, 0.2, 0.2]
+      red_img = self.sensor.getRGBImg(512)
+      self.sensor.light_color = [0.2, 0.2, 1]
+      blue_img = self.sensor.getRGBImg(512)
+      rgb_img = np.concatenate([red_img[:, :, :256], blue_img[:, :, 256:]], 2)
+    elif 'two_specular' in self.corrupt:
+      self.sensor.light_specular_coeff = 0
+      dark_img = self.sensor.getRGBImg(512)
+      self.sensor.light_specular_coeff = 0.2
+      light_img = self.sensor.getRGBImg(512)
+      rgb_img = np.concatenate([dark_img[:, :, :256], light_img[:, :, 256:]], 2)
+    else:
+      rgb_img = self.sensor.getRGBImg(512)
     depth_img = self.sensor.getDepthImg(512).reshape(1, 512, 512)
     rgbd = np.concatenate([rgb_img, depth_img])
     rgbd = cv2.resize(np.moveaxis(rgbd, 0, 2), (self.heightmap_size, self.heightmap_size), interpolation=cv2.INTER_AREA)
