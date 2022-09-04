@@ -463,6 +463,8 @@ class BaseEnv:
       padding = 0.17
     elif shape_type == constants.PLATE:
       padding = 0.2
+    elif shape_type == constants.DUCK:
+      padding = 0.
     else:
       raise ValueError('Attempted to generate invalid shape.')
     return padding
@@ -479,6 +481,8 @@ class BaseEnv:
     elif shape_type == constants.BOWL:
       min_distance = 0.17
     elif shape_type == constants.PLATE:
+      min_distance = 0.2
+    elif shape_type == constants.DUCK:
       min_distance = 0.2
     else:
       raise ValueError('Attempted to generate invalid shape.')
@@ -584,7 +588,8 @@ class BaseEnv:
         handle = pb_obj_generation.generateRandomHouseHoldObj200(position, orientation, scale, model_id)
       elif shape_type == constants.GRASP_NET_OBJ:
         handle = pb_obj_generation.generateGraspNetObject(position, orientation, scale, model_id)
-
+      elif shape_type == constants.DUCK:
+        handle = pb_obj_generation.generateDuck(position, orientation, scale)
       else:
         raise NotImplementedError
 
