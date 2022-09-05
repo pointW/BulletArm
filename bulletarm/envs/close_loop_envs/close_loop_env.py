@@ -41,7 +41,7 @@ class CloseLoopEnv(BaseEnv):
     self.corrupt = config['corrupt']
     for corrupt in self.corrupt:
       assert corrupt in ['', 'grid', 'side', 'occlusion', 'shadow', 'random_light_color', 'reflect', 'random_reflect',
-                         'squeeze', 'two_light_color', 'two_specular']
+                         'squeeze', 'two_light_color', 'two_specular', 'light_effect']
     self.view_scale = config['view_scale']
     self.robot_type = config['robot']
     if config['robot'] == 'kuka':
@@ -88,7 +88,7 @@ class CloseLoopEnv(BaseEnv):
       blocker = pb.createVisualShape(pb.GEOM_BOX, halfExtents=[0.05/2, 0.1/2, 0.001], rgbaColor=[0.2, 0.2, 0.2, 1])
       blocker_id = pb.createMultiBody(baseMass=0,
                                       baseVisualShapeIndex=blocker,
-                                      basePosition=[self.workspace[0][1] - 0.1, self.workspace[1][0] + 0.1, 0.15],
+                                      basePosition=[self.workspace[0][1] - 0.1, self.workspace[1][0] + 0.1, 0.2],
                                       baseOrientation=[0, 0, 0, 1])
       # pb.changeVisualShape(blocker_id, -1, rgbaColor=[0, 0, 0, 0])
 
@@ -140,6 +140,10 @@ class CloseLoopEnv(BaseEnv):
       self.sensor.proj_matrix = pb.computeProjectionMatrixFOV(self.sensor.fov, aspect, self.sensor.near, self.sensor.far)
     self.renderer = Renderer(self.workspace)
     self.pers_sensor = Sensor(cam_pos, cam_up_vector, target_pos, self.obs_size_m, cam_pos[2] - 1, cam_pos[2])
+    if 'light_effect' in self.corrupt:
+      self.sensor.light_direction = [-1, 0, 0.7]
+      self.sensor.light_specular_coeff = 0.5
+      self.sensor.shadow = 1
 
   def _getValidOrientation(self, random_orientation):
     if random_orientation:

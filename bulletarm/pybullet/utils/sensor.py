@@ -14,7 +14,7 @@ class Sensor(object):
     self.fov = np.degrees(2 * np.arctan((target_size / 2) / self.far))
     self.proj_matrix = pb.computeProjectionMatrixFOV(self.fov, 1, self.near, self.far)
 
-    self.light_direction = (-1, 1, 2)
+    self.light_direction = (0, 0, 1)
     self.shadow = 0
     self.light_specular_coeff = 0.1
     self.light_color = (1, 1, 1)
