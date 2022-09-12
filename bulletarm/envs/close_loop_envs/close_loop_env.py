@@ -67,6 +67,8 @@ class CloseLoopEnv(BaseEnv):
     self.simulate_pos = None
     self.simulate_rot = None
 
+    self.reflect_id = 0
+
   def initialize(self):
     '''
     Initialize the pybullet world.
@@ -297,12 +299,13 @@ class CloseLoopEnv(BaseEnv):
   #     obs = self._getVecObservation()
   #     return self._isHolding(), None, obs
 
-  def _getObservation(self, action=None):
+  def _getObservation(self, action=None, reset_random=True):
     ''''''
     if 'shadow' in self.corrupt:
       self.sensor.shadow = 1
     if 'random_light_color' in self.corrupt:
-      self.sensor.light_color = np.random.random(3) * 0.8 + 0.2
+      if reset_random:
+        self.sensor.light_color = np.random.random(3) * 0.8 + 0.2
     # rgb_img = self.sensor.getRGBImg(self.heightmap_size)
     # depth_img = self.sensor.getDepthImg(self.heightmap_size).reshape(1, self.heightmap_size, self.heightmap_size)
     # rgbd = np.concatenate([rgb_img, depth_img])
@@ -327,9 +330,14 @@ class CloseLoopEnv(BaseEnv):
     if 'reflect' in self.corrupt:
       rgbd = rgbd[:, :, ::-1]
     if 'random_reflect' in self.corrupt:
-      if np.random.random() > 0.5:
+      if reset_random:
+        self.reflect_id = np.random.randint(2)
+      if self.reflect_id == 1:
         rgbd = rgbd[:, :, ::-1]
-      if np.random.random() > 0.5:
+      elif self.reflect_id == 2:
+        rgbd = rgbd[:, ::-1, :]
+      elif self.reflect_id == 3:
+        rgbd = rgbd[:, :, ::-1]
         rgbd = rgbd[:, ::-1, :]
     return self._isHolding(), None, rgbd
 

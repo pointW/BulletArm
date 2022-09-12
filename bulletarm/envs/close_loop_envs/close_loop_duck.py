@@ -163,7 +163,7 @@ class CloseLoopDuckEnv(CloseLoopEnv):
     for i in range(100):
       pb.stepSimulation()
 
-    _, _, obs1 = self._getObservation()
+    _, _, obs1 = self._getObservation(reset_random=True)
 
     idx = np.random.randint(0, 8)
 
@@ -206,7 +206,7 @@ class CloseLoopDuckEnv(CloseLoopEnv):
     for i in range(100):
       pb.stepSimulation()
 
-    _, _, obs2 = self._getObservation()
+    _, _, obs2 = self._getObservation(reset_random=False)
     obs = np.concatenate([obs1, obs2])
 
     return idx, None, obs
