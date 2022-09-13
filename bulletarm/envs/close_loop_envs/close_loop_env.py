@@ -41,7 +41,7 @@ class CloseLoopEnv(BaseEnv):
     self.corrupt = config['corrupt']
     for corrupt in self.corrupt:
       assert corrupt in ['', 'grid', 'side', 'occlusion', 'shadow', 'random_light_color', 'reflect', 'random_reflect',
-                         'squeeze', 'two_light_color', 'two_specular', 'light_effect']
+                         'squeeze', 'two_light_color', 'two_specular', 'light_effect', 'condition_reverse']
     self.view_scale = config['view_scale']
     self.robot_type = config['robot']
     if config['robot'] == 'kuka':
