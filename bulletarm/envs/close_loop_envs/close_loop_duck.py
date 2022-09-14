@@ -210,7 +210,7 @@ class CloseLoopDuckEnv(CloseLoopEnv):
     obs = np.concatenate([obs1, obs2])
 
     if 'condition_reverse' in self.corrupt:
-      if self.duck1_pos_base[1] < 0:
+      if self.duck1_pos_base[1] < self.duck2_pos_base[1]:
         idx = 7-idx
     return idx, None, obs
 
