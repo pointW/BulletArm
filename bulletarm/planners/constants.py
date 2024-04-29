@@ -18,6 +18,7 @@ from bulletarm.planners.bottle_tray_planner import BottleTrayPlanner
 from bulletarm.planners.box_palletizing_planner import BoxPalletizingPlanner
 from bulletarm.planners.bumpy_house_building_4_planner import BumpyHouseBuilding4Planner
 from bulletarm.planners.covid_test_planner import CovidTestPlanner
+from bulletarm.planners.bottle_side_picking_planner import BottleSidePickingPlanner
 from bulletarm.planners.close_loop_block_picking_planner import CloseLoopBlockPickingPlanner
 from bulletarm.planners.close_loop_block_stacking_planner import CloseLoopBlockStackingPlanner
 from bulletarm.planners.close_loop_block_pulling_planner import CloseLoopBlockPullingPlanner
@@ -73,6 +74,7 @@ PLANNERS = {
   'bumpy_box_palletizing': BoxPalletizingPlanner,
   'bumpy_house_building_4': BumpyHouseBuilding4Planner,
   'covid_test':CovidTestPlanner,
+  'bottle_side_picking':BottleSidePickingPlanner,
   'close_loop_block_picking':CloseLoopBlockPickingPlanner,
   'close_loop_block_reaching':CloseLoopBlockPickingPlanner,
   'close_loop_block_stacking':CloseLoopBlockStackingPlanner,

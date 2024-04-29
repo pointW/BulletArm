@@ -36,6 +36,7 @@ from bulletarm.envs.realistic_envs.random_household_picking_clutter_env import c
 from bulletarm.envs.realistic_envs.bottle_tray_env import createBottleTrayEnv
 from bulletarm.envs.realistic_envs.box_palletizing_env import createBoxPalletizingEnv
 from bulletarm.envs.realistic_envs.covid_test_env import createCovidTestEnv
+from bulletarm.envs.realistic_envs.bottle_side_picking_env import createBottleSidePickingEnv
 
 from bulletarm.envs.ramp_envs.ramp_block_stacking_env import createRampBlockStackingEnv
 from bulletarm.envs.ramp_envs.ramp_house_building_1_env import createRampHouseBuilding1Env
@@ -118,6 +119,7 @@ CREATE_ENV_FNS = {
   'bumpy_box_palletizing': createBumpyBoxPalletizingEnv,
   'bumpy_house_building_4': createBumpyHouseBuilding4Env,
   'covid_test': createCovidTestEnv,
+  'bottle_side_picking': createBottleSidePickingEnv,
   'close_loop_block_picking': createCloseLoopBlockPickingEnv,
   'close_loop_block_reaching': createCloseLoopBlockReachingEnv,
   'close_loop_block_stacking': createCloseLoopBlockStackingEnv,

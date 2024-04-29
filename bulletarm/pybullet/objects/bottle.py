@@ -14,8 +14,8 @@ class Bottle(PybulletObject):
   def __init__(self, pos, rot, scale):
     self.scale = scale
     root_dir = os.path.dirname(bulletarm.__file__)
-    # self.model_id = 1
-    self.model_id = np.random.choice([1, 3, 4, 5, 7, 8, 9, 10])
+    self.model_id = 3
+    # self.model_id = np.random.choice([1, 3, 4, 5, 7, 8, 9, 10])
     urdf_filepath = os.path.join(root_dir, constants.OBJECTS_PATH, 'bottle/bottle{}.urdf'.format(self.model_id))
     object_id = pb.loadURDF(urdf_filepath, basePosition=pos, baseOrientation=rot, globalScaling=scale)
 
